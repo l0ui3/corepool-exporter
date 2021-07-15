@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
+import logging
 import pickle
-from logging import raiseExceptions
 from os import path
 from time import sleep
 
@@ -9,6 +9,26 @@ import cloudscraper
 
 import config
 
+# Create logger
+logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+
+def print_prometheus(metric, values):
+    """Print metrics in Prometheus format.
+
+    Args:
+        metric (str): metric name
+        values ([dict]): metric value in dict
+    """
+    print("# HELP corepool_%s CorePool metric for %s" % (metric, metric))
+    print("# TYPE corepool_%s gauge" % (metric))
+    for labels in values:
+        if labels is None:
+            print("corepool_%s %s" % (metric, values[labels]))
+        else:
+            print("corepool_%s{%s} %f" % (metric, labels, values[labels]))
 
 def import_scraper_object(scraper_file='scraper.object'):
     """Import scraper object from file
@@ -25,6 +45,12 @@ def import_scraper_object(scraper_file='scraper.object'):
         return pickle.load(f)
 
 def export_scraper_objects(scraper, scraper_file='scraper.object'):
+    """Export scraper object to file with pickle
+
+    Args:
+        scraper (cloudscraper.CloudScraper): A cloudscraper object
+        scraper_file (str, optional): file path to save scraper object.
+    """
     with open(scraper_file, 'wb') as f:
         pickle.dump(scraper, f)
 
@@ -32,12 +58,12 @@ def generate_working_scraper(scraper_file='scraper.object'):
     while True:
         scraper = cloudscraper.create_scraper()
         url = "https://core-pool.com/"
-        print(f"[*] Trying to bypass with User-Agent: {scraper.headers['User-Agent']}")
+        logger.info(f"[*] Trying to bypass with User-Agent: {scraper.headers['User-Agent']}")
         response = scraper.get(url)
         if response.status_code == 200:
             return scraper
         else:
-            print('[*] Failed to bypass CloudFlare, try again in 5 seconds...')
+            logger.info('[*] Failed to bypass CloudFlare, try again in 5 seconds...')
             sleep(5)
 
 def export_cookies(cookies):
@@ -56,13 +82,13 @@ def get_login_session(scraper, username, password):
         'remember_password': 'on'
     }
     status_code = None
-    print('[*] Trying to login...')
+    logger.info('[*] Trying to login...')
     response = scraper.post(url, data=data)
     status_code = response.status_code
     if status_code != 200:
-        print('[-] Failed to login')
+        logger.error('[-] Failed to login')
     else:
-        print('[+] Login successfully.')
+        logger.info('[+] Login successfully.')
         return scraper
 
 def parse_homepage(response_text):
@@ -74,40 +100,50 @@ def parse_homepage(response_text):
 
 def parse_dashboard(response_text):
     return {
-        "unpaid_balance": response_text.split('Your unpaid balance">')[1].split(' XCH')[0],
-        "plot_points": response_text.split('your plot count">')[1].split(' PlotPoints')[0],
-        "total_plots": response_text.split('Total Plot Count</div> <div class="h3">')[1].split(' </div>')[0],
-        "blocks_found": response_text.split('blocks earned today">')[1].split(' Block')[0]
+        "unpaid_balance": float(response_text.split('Your unpaid balance">')[1].split(' XCH')[0]),
+        "plot_points": int(response_text.split('your plot count">')[1].split(' PlotPoints')[0]),
+        "total_plots": int(response_text.split('Total Plot Count</div> <div class="h3">')[1].split(' </div>')[0]),
+        "blocks_found": int(response_text.split('blocks earned today">')[1].split(' Block')[0])
     }
 
-def scrape_homepage(scraper):
-    url = "https://core-pool.com/"
-    return scraper.get(url) 
+def main():
+    # Get working scraper
+    if path.exists('scraper.object'):
+        logger.info('Found a scraper object, loading it.')
+        scraper = import_scraper_object()
+    else:
+        logger.info('Creating a working scraper')
+        scraper = generate_working_scraper()
+        export_scraper_objects(scraper)
 
-def scrape_dashboard(scraper):
+    # Import cookies if exists
+    if path.exists('cookies.object'):
+        logger.info('Found a cookies to use, importing it.')
+        import_cookies(scraper)
+    else:
+        logger.info('No existing cookies found, getting one now...')
+        scraper = get_login_session(scraper, config.CORE_POOL_USERNAME, config.CORE_POOL_PASSWORD)
+        export_cookies(scraper.cookies)
+
+    # Scrape dashboard
     url = 'https://core-pool.com/dashboard'
-    return scraper.get(url)
-    
+    response = scraper.get(url, allow_redirects=False)
 
-# Get working scraper
-if path.exists('scraper.object'):
-    print('Found a scraper object, loading it.')
-    scraper = import_scraper_object()
-else:
-    print('Creating a working scraper')
-    scraper = generate_working_scraper()
-    export_scraper_objects(scraper)
+    # If cookies is expired, then re-login and scrape again.
+    if response.status_code == 302:
+        scraper = get_login_session(scraper, config.CORE_POOL_USERNAME, config.CORE_POOL_PASSWORD)
+        export_cookies(scraper.cookies)
+        response = scraper.get('https://core-pool.com/dashboard')
 
-# Import cookies if exists
-if path.exists('cookies.object'):
-    print('Found a cookies to use, importing it.')
-    import_cookies(scraper)
-else:
-    print('No existing cookies found, getting one now...')
-    scraper = get_login_session(scraper, config.CORE_POOL_USERNAME, config.CORE_POOL_PASSWORD)
-    export_cookies(scraper.cookies)
+    corepool_dashboard = parse_dashboard(response.text)
+    response = scraper.get('https://core-pool.com/')
+    corepool_homepage = parse_homepage(response.text)
 
-response = scrape_dashboard(scraper)
-print(parse_dashboard(response.text))
-response = scrape_homepage(scraper)
-print(parse_homepage(response.text))
+    for key in corepool_dashboard.keys():
+        print_prometheus(key, {None: corepool_dashboard[key]})
+    for key in corepool_homepage.keys():
+        print_prometheus(key, {None: corepool_homepage[key]})
+
+
+if __name__ == '__main__':
+    main()
