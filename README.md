@@ -3,6 +3,14 @@ The script scrape CorePool pages for information, and export to prometheus metri
 
 This is used with the Node Exporter Textfile Collector. You have to setup your own stack.
 
+## Installation
+
+Create a virtual environment
+```sh
+python3 -m venv .venv
+```
+
+
 ## Usage
 Rename `config.py.example` to `config.py`
 ```sh
@@ -13,14 +21,14 @@ Fill your Core Pool **username** and **password** in `config.py`
 
 Run the script and output to a `*.prom` file.
 ```sh
-$ python3 main.py > corepool_metrics.prom
+python3 main.py > corepool_metrics.prom
 ```
 
 ### Add to Prometheus Textfile Collector
 Add the `--collector.textfile.directory` parameter to the node export
 
 ```
-/usr/local/bin/node_exporter --collector.textfile.directory /path/to/corepool_metrics.prom
+/usr/local/bin/node_exporter --collector.textfile.directory /path/to/corepool_metrics.prom/
 ```
 
 ## Metrics
