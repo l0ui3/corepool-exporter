@@ -54,7 +54,15 @@ def export_scraper_objects(scraper, scraper_file='scraper.object'):
     with open(scraper_file, 'wb') as f:
         pickle.dump(scraper, f)
 
-def generate_working_scraper(scraper_file='scraper.object'):
+def generate_scraper(scraper_file='scraper.object'):
+    """Generate a working cloudflare scraper
+
+    Args:
+        scraper_file (str, optional): File path to save scraper object. Defaults to 'scraper.object'.
+
+    Returns:
+        CloudScraper: A cloudscraper object
+    """
     while True:
         scraper = cloudscraper.create_scraper()
         url = "https://core-pool.com/"
@@ -113,7 +121,7 @@ def main():
         scraper = import_scraper_object()
     else:
         logger.info('Creating a working scraper')
-        scraper = generate_working_scraper()
+        scraper = generate_scraper()
         export_scraper_objects(scraper)
 
     # Import cookies if exists
