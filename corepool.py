@@ -183,7 +183,7 @@ def main():
         elif farmer['Status'] == ' Online ':
             farmer_status_gauge.labels(farmer['Name']).set(1)
 
-    write_to_textfile('./corepool.prom', registry)
+    write_to_textfile(config.METRICS_FILE_PATH, registry)
 
 if __name__ == '__main__':
     main()

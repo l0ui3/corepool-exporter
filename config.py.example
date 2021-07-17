@@ -2,3 +2,4 @@
 
 CORE_POOL_USERNAME = ''
 CORE_POOL_PASSWORD = ''
+METRICS_FILE_PATH  = './corepool.prom'
