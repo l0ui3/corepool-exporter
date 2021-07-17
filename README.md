@@ -24,46 +24,50 @@ cp config.py.example config.py
 
 Fill your Core Pool **username** and **password** in `config.py`
 
-Run the script and output to a `*.prom` file.
+Just run the script, it will output a `corepool.prom` file.
 ```sh
-python3 corepool.py > corepool_metrics.prom
+python3 corepool.py
 ```
 
 ### Add to Prometheus Textfile Collector
 Add the `--collector.textfile.directory` parameter to the node export
 
 ```
-/usr/local/bin/node_exporter --collector.textfile.directory /path/to/corepool_metrics.prom/
+/usr/local/bin/node_exporter --collector.textfile.directory /path/to/corepool.prom/
 ```
 
 ## Metrics
 
 ```
-# HELP corepool_unpaid_balance CorePool metric for unpaid_balance
+# HELP corepool_unpaid_balance unpaid XCH balance
 # TYPE corepool_unpaid_balance gauge
-corepool_unpaid_balance 0.217829
-# HELP corepool_plot_points CorePool metric for plot_points
+corepool_unpaid_balance 0.270885
+# HELP corepool_plot_points current accumulate plot points
 # TYPE corepool_plot_points gauge
-corepool_plot_points 570000
-# HELP corepool_total_plots CorePool metric for total_plots
+corepool_plot_points 405000.0
+# HELP corepool_total_plots account total plots
 # TYPE corepool_total_plots gauge
-corepool_total_plots 1000
-# HELP corepool_blocks_found CorePool metric for blocks_found
+corepool_total_plots 1000.0
+# HELP corepool_blocks_found current accumulate blocks found
 # TYPE corepool_blocks_found gauge
-corepool_blocks_found 18
-# HELP corepool_active_farmers CorePool metric for active_farmers
+corepool_blocks_found 25.0
+# HELP corepool_farmer_status 1 if the farmer is online
+# TYPE corepool_farmer_status gauge
+corepool_farmer_status{farmer="MyCorePoolFarmer1"} 1.0
+corepool_farmer_status{farmer="MyCorePoolFarmer2"} 0.0
+# HELP corepool_active_farmers pool total active farmers
 # TYPE corepool_active_farmers gauge
-corepool_active_farmers 10765
-# HELP corepool_farmer_plots CorePool metric for farmer_plots
+corepool_active_farmers 11048.0
+# HELP corepool_farmer_plots pool total plot count
 # TYPE corepool_farmer_plots gauge
-corepool_farmer_plots 4297895
-# HELP corepool_total_pool_size_pib CorePool metric for total_pool_size_pib
+corepool_farmer_plots 4.453431e+06
+# HELP corepool_total_pool_size_pib pool total plot size in PiB
 # TYPE corepool_total_pool_size_pib gauge
-corepool_total_pool_size_pib 422.65
+corepool_total_pool_size_pib 441.07
 ```
 
 ## To-Do
 
 - [x] Scrape farmer online status
 - [ ] Scrape the plot point percentage in the pool
-- [ ] Use **Prometheus Python Client** to export metrics
+- [x] Use **Prometheus Python Client** to export metrics

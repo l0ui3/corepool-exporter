@@ -7,29 +7,15 @@ from time import sleep
 
 import cloudscraper
 from bs4 import BeautifulSoup, BeautifulStoneSoup
+from prometheus_client import CollectorRegistry, Gauge, write_to_textfile
 
 import config
 
 # Create logger
-logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logging.basicConfig(format='%(asctime)s - %(name)s [%(levelname)s] - %(message)s')
+logger = logging.getLogger()
+logger.setLevel(logging.DEBUG)
 
-
-def print_prometheus(metric, values):
-    """Print metrics in Prometheus format.
-
-    Args:
-        metric (str): metric name
-        values ([dict]): metric value in dict
-    """
-    print("# HELP corepool_%s CorePool metric for %s" % (metric, metric))
-    print("# TYPE corepool_%s gauge" % (metric))
-    for labels in values:
-        if labels is None:
-            print("corepool_%s %s" % (metric, values[labels]))
-        else:
-            print("corepool_%s{%s} %s" % (metric, labels, values[labels]))
 
 def import_scraper_object(scraper_file='scraper.object'):
     """Import scraper object from file
@@ -139,7 +125,17 @@ def parse_dashboard(response_text):
     }
 
 def main():
-    # Get working scraper
+    registry = CollectorRegistry()
+    unpaid_balance_gauge = Gauge('corepool_unpaid_balance', 'unpaid XCH balance', registry=registry)
+    plot_points_gauge = Gauge('corepool_plot_points', 'current accumulate plot points', registry=registry)
+    total_plots_gauge = Gauge('corepool_total_plots', 'account total plots', registry=registry)
+    blocks_found_gauge = Gauge('corepool_blocks_found', 'current accumulate blocks found', registry=registry)
+    farmer_status_gauge = Gauge('corepool_farmer_status', '1 if the farmer is online', ['farmer'], registry=registry)
+    active_farmers_gauge = Gauge('corepool_active_farmers', 'pool total active farmers', registry=registry)
+    farmer_plots_gauge = Gauge('corepool_farmer_plots', 'pool total plot count', registry=registry)
+    total_pool_size_pib_gauge = Gauge('corepool_total_pool_size_pib', 'pool total plot size in PiB', registry=registry)
+    
+    # Get a working scraper
     if path.exists('scraper.object'):
         logger.info('Found a scraper object, loading it.')
         scraper = import_scraper_object()
@@ -157,7 +153,7 @@ def main():
         scraper = get_login_session(scraper, config.CORE_POOL_USERNAME, config.CORE_POOL_PASSWORD)
         export_cookies(scraper.cookies)
 
-    # Scrape dashboard
+    # Scrape dashboard for account info
     url = 'https://core-pool.com/dashboard'
     response = scraper.get(url, allow_redirects=False)
 
@@ -166,26 +162,28 @@ def main():
         scraper = get_login_session(scraper, config.CORE_POOL_USERNAME, config.CORE_POOL_PASSWORD)
         export_cookies(scraper.cookies)
         response = scraper.get('https://core-pool.com/dashboard')
-
     corepool_dashboard = parse_dashboard(response.text)
+
+    # Scrape homepage for pool info
     response = scraper.get('https://core-pool.com/')
     corepool_homepage = parse_homepage(response.text)
 
-    # Print metrics
-    print_prometheus('unpaid_balance', {None: corepool_dashboard['unpaid_balance']})
-    print_prometheus('plot_points', {None: corepool_dashboard['plot_points']})
-    print_prometheus('total_plots', {None: corepool_dashboard['total_plots']})
-    print_prometheus('blocks_found', {None: corepool_dashboard['blocks_found']})
+    # Set metrics
+    active_farmers_gauge.set(corepool_homepage['active_farmers'])
+    farmer_plots_gauge.set(corepool_homepage['farmer_plots'])
+    total_pool_size_pib_gauge.set(corepool_homepage['total_pool_size_pib'])
+
+    unpaid_balance_gauge.set(corepool_dashboard['unpaid_balance'])
+    plot_points_gauge.set(corepool_dashboard['plot_points'])
+    total_plots_gauge.set(corepool_dashboard['total_plots'])
+    blocks_found_gauge.set(corepool_dashboard['blocks_found'])
     for farmer in corepool_dashboard['farmers']:
         if farmer['Status'] == ' Offline ':
-            print_prometheus('farmer_status', {farmer['Name']: 0})
+            farmer_status_gauge.labels(farmer['Name']).set(0)
         elif farmer['Status'] == ' Online ':
-            print_prometheus('farmer_status', {farmer['Name']: 1})
+            farmer_status_gauge.labels(farmer['Name']).set(1)
 
-    print_prometheus('active_farmers', {None: corepool_homepage['active_farmers']})
-    print_prometheus('farmer_plots', {None: corepool_homepage['farmer_plots']})
-    print_prometheus('total_pool_size_pib', {None: corepool_homepage['total_pool_size_pib']})
-
+    write_to_textfile('./corepool.prom', registry)
 
 if __name__ == '__main__':
     main()
