@@ -6,6 +6,7 @@ from os import path
 from time import sleep
 
 import cloudscraper
+from bs4 import BeautifulSoup, BeautifulStoneSoup
 
 import config
 
@@ -28,7 +29,7 @@ def print_prometheus(metric, values):
         if labels is None:
             print("corepool_%s %s" % (metric, values[labels]))
         else:
-            print("corepool_%s{%s} %f" % (metric, labels, values[labels]))
+            print("corepool_%s{%s} %s" % (metric, labels, values[labels]))
 
 def import_scraper_object(scraper_file='scraper.object'):
     """Import scraper object from file
@@ -104,11 +105,37 @@ def parse_homepage(response_text):
     }
 
 def parse_dashboard(response_text):
+    def html_table_to_dict(html):
+        """Parse HTML tables to a list of dictionary.
+
+        Args:
+            html (str): a whole HTML contain tables.
+
+        Returns:
+            list: A list of dictionary parsed from html table
+        """
+        soup = BeautifulSoup(html, 'html.parser')
+        tables = soup.find_all('table')
+        results = []
+        for table in tables:
+            table_headers = [header.text for header in table.find('thead').find_all('th')]
+            table_body = []
+            for row in table.find('tbody').find_all('tr'):
+                row_dict = {}
+                for i, cell in enumerate(row.find_all('td')):
+                    row_dict[table_headers[i]] = cell.text
+                table_body.append(row_dict)
+            results.append(table_body)
+        return results
+
+    farmer_table = html_table_to_dict(response_text)[0]
+
     return {
         "unpaid_balance": float(response_text.split('Your unpaid balance">')[1].split(' XCH')[0]),
         "plot_points": int(response_text.split('your plot count">')[1].split(' PlotPoints')[0]),
         "total_plots": int(response_text.split('Total Plot Count</div> <div class="h3">')[1].split(' </div>')[0]),
-        "blocks_found": int(response_text.split('blocks earned today">')[1].split(' Block')[0])
+        "blocks_found": int(response_text.split('blocks earned today">')[1].split(' Block')[0]),
+        'farmers': farmer_table
     }
 
 def main():
@@ -144,10 +171,20 @@ def main():
     response = scraper.get('https://core-pool.com/')
     corepool_homepage = parse_homepage(response.text)
 
-    for key in corepool_dashboard.keys():
-        print_prometheus(key, {None: corepool_dashboard[key]})
-    for key in corepool_homepage.keys():
-        print_prometheus(key, {None: corepool_homepage[key]})
+    # Print metrics
+    print_prometheus('unpaid_balance', {None: corepool_dashboard['unpaid_balance']})
+    print_prometheus('plot_points', {None: corepool_dashboard['plot_points']})
+    print_prometheus('total_plots', {None: corepool_dashboard['total_plots']})
+    print_prometheus('blocks_found', {None: corepool_dashboard['blocks_found']})
+    for farmer in corepool_dashboard['farmers']:
+        if farmer['Status'] == ' Offline ':
+            print_prometheus('farmer_status', {farmer['Name']: 0})
+        elif farmer['Status'] == ' Online ':
+            print_prometheus('farmer_status', {farmer['Name']: 1})
+
+    print_prometheus('active_farmers', {None: corepool_homepage['active_farmers']})
+    print_prometheus('farmer_plots', {None: corepool_homepage['farmer_plots']})
+    print_prometheus('total_pool_size_pib', {None: corepool_homepage['total_pool_size_pib']})
 
 
 if __name__ == '__main__':

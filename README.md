@@ -64,5 +64,6 @@ corepool_total_pool_size_pib 422.65
 
 ## To-Do
 
-- [ ] Scrape farmer online status
+- [x] Scrape farmer online status
 - [ ] Scrape the plot point percentage in the pool
+- [ ] Use **Prometheus Python Client** to export metrics
