@@ -54,14 +54,11 @@ def export_scraper_objects(scraper, scraper_file='scraper.object'):
     with open(scraper_file, 'wb') as f:
         pickle.dump(scraper, f)
 
-def generate_scraper(scraper_file='scraper.object'):
+def generate_scraper():
     """Generate a working cloudflare scraper
 
-    Args:
-        scraper_file (str, optional): File path to save scraper object. Defaults to 'scraper.object'.
-
     Returns:
-        CloudScraper: A cloudscraper object
+        CloudScraper: cloudscraper object
     """
     while True:
         scraper = cloudscraper.create_scraper()

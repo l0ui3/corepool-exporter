@@ -10,6 +10,11 @@ Create a virtual environment
 python3 -m venv .venv
 ```
 
+Install dependencies
+```sh
+source .venv/bin/activate
+pip3 install -r requirements.txt
+```
 
 ## Usage
 Rename `config.py.example` to `config.py`
@@ -21,7 +26,7 @@ Fill your Core Pool **username** and **password** in `config.py`
 
 Run the script and output to a `*.prom` file.
 ```sh
-python3 main.py > corepool_metrics.prom
+python3 corepool.py > corepool_metrics.prom
 ```
 
 ### Add to Prometheus Textfile Collector

@@ -143,3 +143,6 @@ scraper.object
 
 # config
 config.py
+
+# prometheus metric textfile
+*.prom
