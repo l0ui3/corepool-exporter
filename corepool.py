@@ -14,7 +14,7 @@ import config
 # Create logger
 logging.basicConfig(format='%(asctime)s - %(name)s [%(levelname)s] - %(message)s')
 logger = logging.getLogger()
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 
 def import_scraper_object(scraper_file='scraper.object'):
@@ -108,6 +108,7 @@ def parse_dashboard(response_text):
     return {
         "unpaid_balance": float(response_text.split('Your unpaid balance">')[1].split(' XCH')[0]),
         "plot_points": int(response_text.split('your plot count">')[1].split(' PlotPoints')[0]),
+        "plot_points_percent": float(response_text.split('total pool network">(')[1].split('%)</a>')[0]),
         "total_plots": int(response_text.split('Total Plot Count</div> <div class="h3">')[1].split(' </div>')[0]),
         "blocks_found": int(response_text.split('blocks earned today">')[1].split(' Block')[0]),
         'farmers': farmer_table
@@ -117,6 +118,7 @@ def main():
     registry = CollectorRegistry()
     unpaid_balance_gauge = Gauge('corepool_unpaid_balance', 'unpaid XCH balance', registry=registry)
     plot_points_gauge = Gauge('corepool_plot_points', 'current accumulate plot points', registry=registry)
+    plot_points_percent_gauge = Gauge('corepool_plot_points_percent', 'plot points share percentage', registry=registry)
     total_plots_gauge = Gauge('corepool_total_plots', 'account total plots', registry=registry)
     blocks_found_gauge = Gauge('corepool_blocks_found', 'current accumulate blocks found', registry=registry)
     farmer_status_gauge = Gauge('corepool_farmer_status', '1 if the farmer is online', ['farmer'], registry=registry)
@@ -164,6 +166,7 @@ def main():
 
     unpaid_balance_gauge.set(corepool_dashboard['unpaid_balance'])
     plot_points_gauge.set(corepool_dashboard['plot_points'])
+    plot_points_percent_gauge.set(corepool_dashboard['plot_points_percent'])
     total_plots_gauge.set(corepool_dashboard['total_plots'])
     blocks_found_gauge.set(corepool_dashboard['blocks_found'])
     for farmer in corepool_dashboard['farmers']:

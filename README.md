@@ -45,6 +45,9 @@ corepool_unpaid_balance 0.270885
 # HELP corepool_plot_points current accumulate plot points
 # TYPE corepool_plot_points gauge
 corepool_plot_points 405000.0
+# HELP corepool_plot_points_percent plot points share percentage
+# TYPE corepool_plot_points_percent gauge
+corepool_plot_points_percent 0.020282
 # HELP corepool_total_plots account total plots
 # TYPE corepool_total_plots gauge
 corepool_total_plots 1000.0
@@ -69,5 +72,5 @@ corepool_total_pool_size_pib 441.07
 ## To-Do
 
 - [x] Scrape farmer online status
-- [ ] Scrape the plot point percentage in the pool
+- [x] Scrape the plot point percentage in the pool
 - [x] Use **Prometheus Python Client** to export metrics
