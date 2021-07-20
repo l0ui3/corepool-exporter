@@ -18,35 +18,19 @@ logger.setLevel(logging.DEBUG)
 
 
 def import_scraper_object(scraper_file='scraper.object'):
-    """Import scraper object from file
-
-    Args:
-        scraper_file (str, optional): scraper object saved with pickle.
-
-    Returns:
-        Obj: a cloudscraper object
-    """
+    """Import scraper object from file"""
     if not path.exists(scraper_file):
         raise(f"[-] Couldn't find scraper file on {path.abspath(scraper_file)}")
     with open(scraper_file, 'rb') as f:
         return pickle.load(f)
 
 def export_scraper_objects(scraper, scraper_file='scraper.object'):
-    """Export scraper object to file with pickle
-
-    Args:
-        scraper (cloudscraper.CloudScraper): A cloudscraper object
-        scraper_file (str, optional): file path to save scraper object.
-    """
+    """Export scraper object to file with pickle"""
     with open(scraper_file, 'wb') as f:
         pickle.dump(scraper, f)
 
 def generate_scraper():
-    """Generate a working cloudflare scraper
-
-    Returns:
-        CloudScraper: cloudscraper object
-    """
+    """Generate a working cloudflare scraper"""
     while True:
         scraper = cloudscraper.create_scraper()
         url = "https://core-pool.com/"
@@ -59,14 +43,17 @@ def generate_scraper():
             sleep(5)
 
 def export_cookies(cookies):
+    """Save cookies object to file"""
     with open('cookies.object', 'wb') as f:
         pickle.dump(cookies, f)
 
-def import_cookies(scraper, cookies_file='cookies.object') -> None:
+def import_cookies(scraper, cookies_file='cookies.object'):
+    """Import cookies object"""
     with open(cookies_file, 'rb') as f:
         scraper.cookies.update(pickle.load(f))
 
 def get_login_session(scraper, username, password):
+    """Get login session with credentials"""
     url = 'https://core-pool.com/login'
     data = {
         'username': username,
@@ -84,6 +71,7 @@ def get_login_session(scraper, username, password):
         return scraper
 
 def parse_homepage(response_text):
+    """Parse homepage html to dict"""
     return {
         "active_farmers": int(response_text.split('activeMinerCount"> ')[1].split(' </a>')[0].replace(',', '')),
         "farmer_plots": int(response_text.split('minerPlots"> ')[1].split(' </a>')[0].replace(',', '')),
@@ -91,6 +79,7 @@ def parse_homepage(response_text):
     }
 
 def parse_dashboard(response_text):
+    """Parse dashboard html to dict"""
     def html_table_to_dict(html):
         """Parse HTML tables to a list of dictionary.
 
