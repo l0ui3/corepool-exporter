@@ -1,4 +1,4 @@
-# CorePool Scraper
+# CorePool Exporter
 The script scrape CorePool pages for information, and export to prometheus metrics format.
 
 This is used with the Node Exporter Textfile Collector. You have to setup your own stack.
@@ -38,7 +38,7 @@ Add the `--collector.textfile.directory` parameter to the node export
 
 ## Metrics
 
-```
+```py
 # HELP corepool_unpaid_balance unpaid XCH balance
 # TYPE corepool_unpaid_balance gauge
 corepool_unpaid_balance 0.270885
