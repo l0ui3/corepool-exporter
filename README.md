@@ -24,9 +24,9 @@ cp config.py.example config.py
 
 Fill your Core Pool **username** and **password** in `config.py`
 
-Just run the script, it will output a `corepool.prom` file.
+Run the script, it will expose the metrics. You may want to save it to a **.prom** file, so textfile collector can process them.
 ```sh
-python3 corepool.py
+python3 corepool.py > corepool.prom
 ```
 
 ### Add to Prometheus Textfile Collector
@@ -34,6 +34,14 @@ Add the `--collector.textfile.directory` parameter to the node export
 
 ```
 /usr/local/bin/node_exporter --collector.textfile.directory /path/to/corepool.prom/
+```
+
+## Docker
+
+Make your `config.py` before you build the image. Then you could build it with
+
+```sh
+docker build -t corepool-exporter .
 ```
 
 ## Metrics
