@@ -105,12 +105,15 @@ def parse_dashboard(response_text):
 
     farmer_table = html_table_to_dict(response_text)[0]
 
+    blocks_found = response_text.split('blocks earned today">')[1].split(' Block')[0]
+    blocks_found = int(blocks_found) if blocks_found.isdigit() else 0
+
     return {
         "unpaid_balance": float(response_text.split('Your unpaid balance">')[1].split(' XCH')[0]),
         "plot_points": int(response_text.split('your plot count">')[1].split(' PlotPoints')[0]),
         "plot_points_percent": float(response_text.split('total pool network">(')[1].split('%)</a>')[0]),
         "total_plots": int(response_text.split('Total Plot Count</div> <div class="h3">')[1].split(' </div>')[0]),
-        "blocks_found": int(response_text.split('blocks earned today">')[1].split(' Block')[0]),
+        "blocks_found": blocks_found,
         'farmers': farmer_table
     }
 
