@@ -6,15 +6,15 @@ from os import path
 from time import sleep
 
 import cloudscraper
-from bs4 import BeautifulSoup, BeautifulStoneSoup
-from prometheus_client import CollectorRegistry, Gauge, write_to_textfile
+from bs4 import BeautifulSoup
+from prometheus_client import CollectorRegistry, Gauge, generate_latest
 
 import config
 
 # Create logger
 logging.basicConfig(format='%(asctime)s - %(name)s [%(levelname)s] - %(message)s')
 logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.ERROR)
 
 
 def import_scraper_object(scraper_file='scraper.object'):
@@ -175,7 +175,8 @@ def main():
         elif farmer['Status'] == ' Online ':
             farmer_status_gauge.labels(farmer['Name']).set(1)
 
-    write_to_textfile(config.METRICS_FILE_PATH, registry)
+    expose = generate_latest(registry).decode('utf-8')
+    print(expose)
 
 if __name__ == '__main__':
     main()
