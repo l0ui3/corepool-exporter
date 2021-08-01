@@ -3,6 +3,8 @@ The script scrape CorePool pages for information, and export to prometheus metri
 
 This is used with the Node Exporter **Textfile Collector**. You have to setup your own stack.
 
+![grafana](screenshots/grafana-dashboard-corepool.png)
+
 ## Installation
 
 Create a virtual environment
