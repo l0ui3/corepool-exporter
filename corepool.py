@@ -33,7 +33,7 @@ def generate_scraper():
     """Generate a working cloudflare scraper"""
     while True:
         scraper = cloudscraper.create_scraper()
-        url = "https://core-pool.com/"
+        url = "https://chiaog.core-pool.com/"
         logger.info(f"[*] Trying to bypass with User-Agent: {scraper.headers['User-Agent']}")
         response = scraper.get(url)
         if response.status_code == 200:
@@ -54,7 +54,7 @@ def import_cookies(scraper, cookies_file='cookies.object'):
 
 def get_login_session(scraper, username, password):
     """Get login session with credentials"""
-    url = 'https://core-pool.com/login'
+    url = 'https://chiaog.core-pool.com/login'
     data = {
         'username': username,
         'password': password,
@@ -148,18 +148,18 @@ def main():
         export_cookies(scraper.cookies)
 
     # Scrape dashboard for account info
-    url = 'https://core-pool.com/dashboard'
+    url = 'https://chiaog.core-pool.com/dashboard'
     response = scraper.get(url, allow_redirects=False)
 
     # If cookies is expired, then re-login and scrape again.
     if response.status_code == 302:
         scraper = get_login_session(scraper, config.CORE_POOL_USERNAME, config.CORE_POOL_PASSWORD)
         export_cookies(scraper.cookies)
-        response = scraper.get('https://core-pool.com/dashboard')
+        response = scraper.get('https://chiaog.core-pool.com/dashboard')
     corepool_dashboard = parse_dashboard(response.text)
 
     # Scrape homepage for pool info
-    response = scraper.get('https://core-pool.com/')
+    response = scraper.get('https://chiaog.core-pool.com/')
     corepool_homepage = parse_homepage(response.text)
 
     # Set metrics
